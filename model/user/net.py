@@ -17,18 +17,8 @@ class UserNet(nn.Module):
     def init_multi_gpu(self, device, config, *args, **kwargs):
         pass
 
-    def forward(self, data, config, gpu_list, acc_result, mode):
-        x = torch.cat([data["t1"], data["t2"]], dim=1)
-        features, shapes = self.encoder(x)
+    def forward(self, data):
+        features, shapes = self.encoder(data)
         pred = self.decoder(features, shapes)
-        target = data["t1ce"]
 
-        loss = self.loss(pred, target)
-        acc_result = general_image_metrics(
-            pred, target, config, acc_result)
-        return {
-            "loss": loss,
-            "output": [acc_result],
-            "acc_result": acc_result,
-            "predict": pred
-        }
+        return pred

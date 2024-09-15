@@ -35,6 +35,7 @@ class CrossformerLayer(nn.Module):
         self.encoder = nn.TransformerEncoderLayer(
             d_model=input_dim,
             nhead=1,
+            norm_first=True,
         )
         self.groups = 0
 

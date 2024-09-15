@@ -51,7 +51,8 @@ class FocalLoss(nn.Module):
 
     def forward(self, input, target):
         if input.dim() > 2:
-            input = input.view(input.size(0), input.size(1), -1)  # N,C,H,W => N,C,H*W
+            # N,C,H,W => N,C,H*W
+            input = input.view(input.size(0), input.size(1), -1)
             input = input.transpose(1, 2)  # N,C,H*W => N,H*W,C
             input = input.contiguous().view(-1, input.size(2))  # N,H*W,C => N*H*W,C
         target = target.view(-1, 1)
@@ -72,3 +73,24 @@ class FocalLoss(nn.Module):
             return loss.mean()
         else:
             return loss.sum()
+
+
+class GramLoss(nn.Module):
+    def __init__(self):
+        super(GramLoss, self).__init__()
+        self.mse_criterion = nn.MSELoss()
+
+    def forward(self, features, targets, weights=None):
+        if weights is None:
+            weights = [1/len(features)] * len(features)
+
+        gram_loss = 0
+        for f, t, w in zip(features, targets, weights):
+            gram_loss += self.mse_criterion(self.gram(f), self.gram(t)) * w
+        return gram_loss
+
+    def gram(self, x):
+        b, c, h, w = x.size()
+        g = torch.bmm(x.reshape(b, c, h*w),
+                      x.reshape(b, c, h*w).transpose(1, 2))
+        return g.div(h*w)
