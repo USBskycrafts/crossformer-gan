@@ -20,14 +20,22 @@ class UserPlayground(Playground):
         predict, g_loss = g_result['predict'], g_result['loss']
         d_result = self.discriminator(
             {
-                "fake": predict.detach(),
+                "fake": predict,
                 "real": data['t1ce']
             },
             config, gpu_list, acc_result, mode)
 
         pred_fake = d_result['pred']['fake']
         g_loss += self.bce_loss(pred_fake, torch.ones_like(pred_fake))
-        d_loss = d_result['loss']
+        del d_result
+        d_result = self.discriminator(
+            {
+                "fake": predict.detach(),
+                "real": data['t1ce']
+            },
+            config, gpu_list, acc_result, mode
+        )
+        d_loss = d_result["loss"]
 
         self.writer.add_scalar('loss/g_loss', g_loss,
                                global_step=self.train_step)
