@@ -1,5 +1,5 @@
 from .user.net import UserNet
-from .discriminator.crossformer import Discriminator
+from .discriminator.discriminator import Discriminator
 
 model_list = {
     "UserNet": UserNet,

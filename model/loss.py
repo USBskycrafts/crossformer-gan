@@ -81,9 +81,10 @@ class GramLoss(nn.Module):
         self.mse_criterion = nn.MSELoss()
 
     def forward(self, features, targets, weights=None):
+        features = torch.split(features, 1, dim=1)
+        targets = torch.split(targets, 1, dim=1)
         if weights is None:
             weights = [1/len(features)] * len(features)
-
         gram_loss = 0
         for f, t, w in zip(features, targets, weights):
             gram_loss += self.mse_criterion(self.gram(f), self.gram(t)) * w
