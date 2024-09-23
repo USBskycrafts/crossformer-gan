@@ -81,8 +81,6 @@ class GramLoss(nn.Module):
         self.mse_criterion = nn.MSELoss()
 
     def forward(self, features, targets, weights=None):
-        features = torch.split(features, 1, dim=1)
-        targets = torch.split(targets, 1, dim=1)
         if weights is None:
             weights = [1/len(features)] * len(features)
         gram_loss = 0
@@ -95,3 +93,32 @@ class GramLoss(nn.Module):
         g = torch.bmm(x.reshape(b, c, h*w),
                       x.reshape(b, c, h*w).transpose(1, 2))
         return g.div(h*w)
+
+
+class SobelLoss(nn.Module):
+    def __init__(self):
+        super(SobelLoss, self).__init__()
+        self.l1_criterion = nn.L1Loss()
+
+    def sobel_x(self, x):
+        sobel_kernel = torch.tensor(
+            [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32, device=x.device).view(1, 1, 3, 3)
+        return F.conv2d(x, sobel_kernel, padding=1)
+
+    def sobel_y(self, x):
+        sobel_kernel = torch.tensor(
+            [[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32, device=x.device).view(1, 1, 3, 3)
+        return F.conv2d(x, sobel_kernel, padding=1)
+
+    def forward(self, pred, target):
+        return self.l1_criterion(self.sobel_x(pred), self.sobel_x(target)) + self.l1_criterion(self.sobel_y(pred), self.sobel_y(target))
+
+
+class ReconstructionLoss(nn.Module):
+    def __init__(self):
+        super(ReconstructionLoss, self).__init__()
+        self.l1_criterion = nn.L1Loss()
+        self.sobel_criterion = SobelLoss()
+
+    def forward(self, x, y):
+        return self.l1_criterion(x, y) * 0.3 + self.sobel_criterion(x, y) * 0.7

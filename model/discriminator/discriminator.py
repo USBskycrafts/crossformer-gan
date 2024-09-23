@@ -16,20 +16,27 @@ class Discriminator(nn.Module):
             if normalize:  # 每次卷积尺寸会缩小一半，共卷积了4次
                 layers.append(nn.InstanceNorm2d(out_filters))
             layers.append(nn.LeakyReLU(0.2, inplace=True))
-            return layers
+            return nn.Sequential(*layers)
 
-        self.model = nn.Sequential(
+        self.layers = nn.ModuleList([
             # layer += [conv(3, 64) + relu]
-            *discriminator_block(channels, 64, normalize=False),
+            discriminator_block(channels, 64, normalize=False),
             # layer += [conv(64, 128) + norm + relu]
-            *discriminator_block(64, 128),
+            discriminator_block(64, 128),
             # layer += [conv(128, 256) + norm + relu]
-            *discriminator_block(128, 256),
+            discriminator_block(128, 256),
             # layer += [conv(256, 512) + norm + relu]
-            *discriminator_block(256, 512),
-            nn.ZeroPad2d((1, 0, 1, 0)),  # layer += [pad]
-            nn.Conv2d(512, 1, 4, padding=1)  # layer += [conv(512, 1)]
-        )
+            discriminator_block(256, 512),
+            nn.Sequential(
+                nn.ZeroPad2d((1, 0, 1, 0)),  # layer += [pad]
+                nn.Conv2d(512, 1, 4, padding=1)  # layer += [conv(512, 1)]
+            )
+        ])
 
     def forward(self, img):  # 输入(1, 3, 256, 256)
-        return self.model(img)  # 输出(1, 1, 16, 16)
+        features = []
+        feature = img
+        for layer in self.layers:
+            feature = layer(feature)
+            features.append(feature)
+        return features
