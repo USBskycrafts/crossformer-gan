@@ -13,13 +13,16 @@ class ConvShuffle(nn.Module):
         self.kernel_size = kernel_size
         self.stride = stride
 
-        self.conv = nn.Conv2d(input_dim, output_dim *
-                              stride * stride, kernel_size=1)
-        self.pixel_shuffle = nn.PixelShuffle(stride)
+        self.sequential = nn.Sequential(
+            nn.Conv2d(input_dim, output_dim *
+                      stride * stride, kernel_size=1),
+            nn.PixelShuffle(stride),
+            nn.InstanceNorm2d(output_dim),
+            nn.LeakyReLU(inplace=True)
+        )
 
     def forward(self, x, output_size):
-        x = self.conv(x)
-        x = self.pixel_shuffle(x)
+        x = self.sequential(x)
         bs, c, h, w = x.size()
         bs_, c_, h_, w_ = output_size
         assert bs == bs_ and c == c_
@@ -34,6 +37,26 @@ class ConvShuffle(nn.Module):
         x = F.pad(x, padding_size, mode='reflect')
         assert x.shape == output_size, f"{x.shape} != {output_size}"
         return x
+
+
+class ConvBlock(nn.Module):
+    def __init__(self, input_dim: int, output_dim: int, kernel_size: int,
+                 stride: int, padding: int):
+        super(ConvBlock, self).__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.sequential = nn.Sequential(
+            nn.Conv2d(input_dim, output_dim,
+                      kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.InstanceNorm2d(output_dim),
+            nn.LeakyReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        return self.sequential(x)
 
 
 class CrossScaleEmbedding(nn.Module):
@@ -54,7 +77,7 @@ class CrossScaleEmbedding(nn.Module):
             self.dim_list = token_size
             for i, k in enumerate(self.kernel_size):
                 self.convs.append(
-                    nn.Conv2d(input_dim, token_size[i],
+                    ConvBlock(input_dim, token_size[i],
                               kernel_size=k, stride=stride, padding=self.padding_size(k, stride)))
         else:
             token_size = self.token_size(self.kernel_size, input_dim)

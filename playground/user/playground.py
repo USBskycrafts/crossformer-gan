@@ -16,39 +16,39 @@ class UserPlayground(Playground):
         super().__init__(config, models, optimizers, writer)
 
         self.generator = models['UserNet']
-        self.discriminator = models['discriminator']
-        self.l1_loss = ReconstructionLoss()
-        self.mse_loss = MSELoss()
+        # self.discriminator = models['discriminator']
+        self.l1_loss = L1Loss()
+        # self.mse_loss = MSELoss()
         self.printer = Printer(config)
-        self.gram_loss = GramLoss()
+        # self.gram_loss = GramLoss()
 
     def train(self, data, config, gpu_list, acc_result, mode):
         pred = self.generator(torch.cat([data['t1'], data['t2']], dim=1))
         target = data['t1ce']
-        fake_features = self.discriminator(pred)
+        # fake_features = self.discriminator(pred)
         g_loss = self.l1_loss(
-            pred, target) + self.mse_loss(fake_features[-1], torch.ones_like(fake_features[-1])) * 0.1
+            pred, target)  # + self.mse_loss(fake_features[-1], torch.ones_like(fake_features[-1]))
         acc_result = general_image_metrics(pred, target, config, acc_result)
         yield {
             "name": "UserNet",
             "loss": g_loss,
             "acc_result": acc_result
         }
-        del fake_features
-        fake_features = self.discriminator(pred.detach())
-        target_features = self.discriminator(target)
-        d_loss = 0.5 * (self.mse_loss(fake_features[-1],
-                                      torch.zeros_like(fake_features[-1]))
-                        + self.mse_loss(target_features[-1],
-                                        torch.ones_like(target_features[-1])))
-        d_loss += self.gram_loss(fake_features[:-1], target_features[:-1])
-        yield {
-            "name": "discriminator",
-            "loss": d_loss,
-            "acc_result": acc_result
-        }
+        # del fake_features
+        # fake_features = self.discriminator(pred.detach())
+        # target_features = self.discriminator(target)
+        # d_loss = 0.5 * (self.mse_loss(fake_features[-1],
+        #                               torch.zeros_like(fake_features[-1]))
+        #                 + self.mse_loss(target_features[-1],
+        #                                 torch.ones_like(target_features[-1]))) * 10
+        # # d_loss += self.gram_loss(fake_features[:-1], target_features[:-1])
+        # yield {
+        #     "name": "discriminator",
+        #     "loss": d_loss,
+        #     "acc_result": acc_result
+        # }
         self.writer.add_scalar("train/UserNet", g_loss, self.train_step)
-        self.writer.add_scalar("train/discriminator", d_loss, self.train_step)
+        # self.writer.add_scalar("train/discriminator", d_loss, self.train_step)
         self.writer.add_scalar(
             "train/PSNR", np.mean(acc_result["PSNR"]), self.train_step)
         self.writer.add_scalar(
@@ -77,7 +77,7 @@ class UserPlayground(Playground):
             "eval/PSNR", np.mean(acc_result["PSNR"]), self.eval_step)
         self.writer.add_scalar(
             "eval/SSIM", np.mean(acc_result["SSIM"]), self.eval_step)
-        if self.eval_step % 100 == 0:
+        if self.eval_step % 10 == 0:
             self.printer({
                 **data,
                 "pred": pred,

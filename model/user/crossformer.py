@@ -115,6 +115,6 @@ class CrossformerDecoder(nn.Module):
         shapes = list(reversed(shapes))
         y = features[0]
         for buddy, shape, embedding, crossformer in zip(features, shapes, self.embeddings, self.crossformers):
-            y = embedding([buddy, y, shape])
             y = crossformer(y)
+            y = embedding([buddy, y, shape])
         return y
