@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 class ConvShuffle(nn.Module):
     def __init__(self, input_dim: int, output_dim: int, kernel_size: int,
-                 stride: int):
+                 stride: int, padding):
         super(ConvShuffle, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -15,14 +15,16 @@ class ConvShuffle(nn.Module):
 
         self.sequential = nn.Sequential(
             nn.Conv2d(input_dim, output_dim *
-                      stride * stride, kernel_size=1),
-            nn.PixelShuffle(stride),
-            nn.InstanceNorm2d(output_dim),
+                      stride ** 4, kernel_size=kernel_size, padding=padding, stride=stride),
+            nn.PixelShuffle(stride ** 2),
+            nn.BatchNorm2d(output_dim),
             nn.LeakyReLU(inplace=True)
         )
 
     def forward(self, x, output_size):
         x = self.sequential(x)
+        # print("start----------------")
+        # print(x.shape)
         bs, c, h, w = x.size()
         bs_, c_, h_, w_ = output_size
         assert bs == bs_ and c == c_
@@ -34,7 +36,10 @@ class ConvShuffle(nn.Module):
             diff_y // 2,
             diff_y - diff_y // 2
         )
+        # print(padding_size)
         x = F.pad(x, padding_size, mode='reflect')
+        # print(x.shape)
+        # print("end----------------")
         assert x.shape == output_size, f"{x.shape} != {output_size}"
         return x
 
@@ -51,7 +56,7 @@ class ConvBlock(nn.Module):
         self.sequential = nn.Sequential(
             nn.Conv2d(input_dim, output_dim,
                       kernel_size=kernel_size, stride=stride, padding=padding),
-            nn.InstanceNorm2d(output_dim),
+            nn.BatchNorm2d(output_dim),
             nn.LeakyReLU(inplace=True)
         )
 
@@ -86,7 +91,9 @@ class CrossScaleEmbedding(nn.Module):
                 self.convs.append(
                     # Warning: may cause error if H and W are not even
                     ConvShuffle(2 * token_size[i], output_dim,
-                                kernel_size=k, stride=stride))
+                                kernel_size=k, stride=stride, padding=self.padding_size(k, stride)))
+            self.compress = nn.Conv2d(output_dim * len(self.kernel_size),
+                                      output_dim, kernel_size=1)
 
     def token_size(self, kernel_size, output_dim) -> List[int]:
         token_dim = []
@@ -133,9 +140,11 @@ class CrossScaleEmbedding(nn.Module):
             assert x.shape == y.shape
             features = torch.concat([x, y], dim=1)
             offset = 0
-            output = torch.zeros((bs, c, h, w), device=features.device)
+            output = []
             for i, d in enumerate(self.dim_list):
-                output += self.convs[i](features[:,
-                                        offset:offset + 2 * d, :, :], output_size=(bs, c, h, w))
+                output.append(self.convs[i](features
+                                            [:, offset:offset + 2 * d, :, :],
+                                            output_size=(bs, c, h, w)))
                 offset = offset + 2 * d
+            output = self.compress(torch.cat(output, dim=1))
             return output

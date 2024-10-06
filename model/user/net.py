@@ -12,8 +12,6 @@ class UserNet(nn.Module):
         self.encoder = CrossformerEncoder(*encoder_params.values())
         self.decoder = CrossformerDecoder(*decoder_params.values())
 
-        self.loss = nn.L1Loss()
-
     def init_multi_gpu(self, device, config, *args, **kwargs):
         pass
 

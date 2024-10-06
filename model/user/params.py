@@ -5,13 +5,13 @@ encoder_params = {
         CrossScaleParams(
             input_dim=2,
             output_dim=96,
-            kernel_size=[2, 4],
-            stride=2),
+            kernel_size=[4, 8, 16, 32],
+            stride=4),
         CrossScaleParams(
             input_dim=96,
             output_dim=192,
-            kernel_size=[4, 8, 16, 32],
-            stride=4),
+            kernel_size=[2, 4],
+            stride=2),
         CrossScaleParams(
             input_dim=192,
             output_dim=384,
@@ -26,17 +26,17 @@ encoder_params = {
     "transformer_params": [
         CrossformerParams(
             input_dim=96,
-            group=4,
+            group=7,
             n_layer=1
         ),
         CrossformerParams(
             input_dim=192,
-            group=4,
+            group=7,
             n_layer=1
         ),
         CrossformerParams(
             input_dim=384,
-            group=14,
+            group=7,
             n_layer=9
         ),
         CrossformerParams(
@@ -62,13 +62,13 @@ decoder_params = {
         CrossScaleParams(
             input_dim=192,
             output_dim=96,
-            kernel_size=[4, 8, 16, 32],
-            stride=4),
+            kernel_size=[2, 4],
+            stride=2),
         CrossScaleParams(
             input_dim=96,
             output_dim=1,
-            kernel_size=[2, 4],
-            stride=2),
+            kernel_size=[4, 8, 16, 32],
+            stride=4),
     ],
     "transformer_params": [
         CrossformerParams(
@@ -78,17 +78,17 @@ decoder_params = {
         ),
         CrossformerParams(
             input_dim=384,
-            group=14,
+            group=7,
             n_layer=9
         ),
         CrossformerParams(
             input_dim=192,
-            group=4,
+            group=7,
             n_layer=1
         ),
         CrossformerParams(
             input_dim=96,
-            group=4,
+            group=7,
             n_layer=1
         ),
     ]
