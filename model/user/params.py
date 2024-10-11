@@ -26,17 +26,17 @@ encoder_params = {
     "transformer_params": [
         CrossformerParams(
             input_dim=96,
-            group=7,
-            n_layer=1
+            group=4,
+            n_layer=3
         ),
         CrossformerParams(
             input_dim=192,
             group=7,
-            n_layer=1
+            n_layer=3
         ),
         CrossformerParams(
             input_dim=384,
-            group=7,
+            group=14,
             n_layer=9
         ),
         CrossformerParams(
@@ -78,18 +78,18 @@ decoder_params = {
         ),
         CrossformerParams(
             input_dim=384,
-            group=7,
+            group=14,
             n_layer=9
         ),
         CrossformerParams(
             input_dim=192,
             group=7,
-            n_layer=1
+            n_layer=3
         ),
         CrossformerParams(
             input_dim=96,
-            group=7,
-            n_layer=1
+            group=4,
+            n_layer=3
         ),
     ]
 }

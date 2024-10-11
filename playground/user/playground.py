@@ -18,16 +18,16 @@ class UserPlayground(Playground):
         self.generator = models['UserNet']
         # self.discriminator = models['discriminator']
         self.l1_loss = L1Loss()
-        # self.mse_loss = MSELoss()
         self.printer = Printer(config)
-        # self.gram_loss = GramLoss()
 
     def train(self, data, config, gpu_list, acc_result, mode):
         pred = self.generator(torch.cat([data['t1'], data['t2']], dim=1))
         target = data['t1ce']
         # fake_features = self.discriminator(pred)
         g_loss = self.l1_loss(
-            pred, target)  # + self.mse_loss(fake_features[-1], torch.ones_like(fake_features[-1]))
+            pred, target)
+        # g_loss += self.mse_loss(fake_features[-1],
+        #                         torch.ones_like(fake_features[-1]))
         acc_result = general_image_metrics(pred, target, config, acc_result)
         yield {
             "name": "UserNet",
@@ -40,8 +40,7 @@ class UserPlayground(Playground):
         # d_loss = 0.5 * (self.mse_loss(fake_features[-1],
         #                               torch.zeros_like(fake_features[-1]))
         #                 + self.mse_loss(target_features[-1],
-        #                                 torch.ones_like(target_features[-1]))) * 10
-        # # d_loss += self.gram_loss(fake_features[:-1], target_features[:-1])
+        #                                 torch.ones_like(target_features[-1]))) * 5
         # yield {
         #     "name": "discriminator",
         #     "loss": d_loss,

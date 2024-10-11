@@ -17,7 +17,7 @@ class ConvShuffle(nn.Module):
             nn.Conv2d(input_dim, output_dim *
                       stride ** 4, kernel_size=kernel_size, padding=padding, stride=stride),
             nn.PixelShuffle(stride ** 2),
-            nn.BatchNorm2d(output_dim),
+            nn.InstanceNorm2d(output_dim),
             nn.LeakyReLU(inplace=True)
         )
 
@@ -56,7 +56,7 @@ class ConvBlock(nn.Module):
         self.sequential = nn.Sequential(
             nn.Conv2d(input_dim, output_dim,
                       kernel_size=kernel_size, stride=stride, padding=padding),
-            nn.BatchNorm2d(output_dim),
+            nn.InstanceNorm2d(output_dim),
             nn.LeakyReLU(inplace=True)
         )
 
