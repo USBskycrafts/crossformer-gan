@@ -3,7 +3,7 @@ from model.user.crossformer import CrossScaleParams, CrossformerParams
 encoder_params = {
     "cross_params": [
         CrossScaleParams(
-            input_dim=2,
+            input_dim=64,
             output_dim=96,
             kernel_size=[4, 8, 16, 32],
             stride=4),
@@ -66,7 +66,7 @@ decoder_params = {
             stride=2),
         CrossScaleParams(
             input_dim=96,
-            output_dim=1,
+            output_dim=64,
             kernel_size=[4, 8, 16, 32],
             stride=4),
     ],

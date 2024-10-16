@@ -11,12 +11,25 @@ class UserNet(nn.Module):
         super(UserNet, self).__init__()
         self.encoder = CrossformerEncoder(*encoder_params.values())
         self.decoder = CrossformerDecoder(*decoder_params.values())
+        self.header = nn.Sequential(
+            nn.ReflectionPad2d(3),
+            nn.Conv2d(2, 64, kernel_size=7),
+            nn.InstanceNorm2d(64),
+            nn.LeakyReLU(inplace=True)
+        )
+
+        self.tail = nn.Sequential(
+            nn.ReflectionPad2d(3),
+            nn.Conv2d(64, 1, kernel_size=7),
+            nn.Softplus()
+        )
 
     def init_multi_gpu(self, device, config, *args, **kwargs):
         pass
 
     def forward(self, data):
+        data = self.header(data)
         features, shapes = self.encoder(data)
         pred = self.decoder(features, shapes)
 
-        return pred
+        return self.tail(pred)
